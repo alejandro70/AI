@@ -1,0 +1,63 @@
+Se realizó un análisis de vulnerabilidad en el servicio web Bizagi.Modeler.Web, en todos los controladores del reporte de Swagger del servicio (http://localhost:8080/modeler/swagger/ui/index)
+Filtros de seguridad
+La seguridad de los endpoints del servicio se implementa con los siguientes filtros:
+-	GlobalAuthorizationFilterAttribute
+-	Se configura con el atributo LicenseAuthorization en cada endpoint
+-	Este filtro comprueba la autorización de acciones Get, Delete, Update, Commit y Share, dependiendo del rol del usuario en el modelo (workspace).
+-	Es configurable como endpoint Puplic o Private: Public no realiza validación de seguridad; Private configura el endpoint para ser validado respecto al rol del usuario en el modelo accedido.
+-	RoleAuthorizationFilterAttribute
+-	Se configura con el atributo RoleAuthorization en cada endpoint
+-	Este filtro comprueba la autorización de acceso del usuario al endpoint dependiendo de su rol en la suscripción: Owner, User.
+Configuración de seguridad
+Se analizaron los endpoints de modificación de información Post, Put y Delete en todos los controladores del servicio:
+1.	Anonymous Access
+Este tipo de acceso permite que un endpoint se pueda ejecutar sin token de usuario.
+2.	Authorization By Role (LicenseAuthorization)
+En este tipo de acceso, la autorización al endpoint depende del rol del usuario en el modelo (workspaceId), según los permisos definidos en la clase PermissionByAccessType para los roles AccessType y las acciones AuthActions:
+AccessType
+-	Owner
+-	Editor
+-	Contributor
+-	Personal
+AuthActions
+-	Comment
+-	Delete
+-	Get
+-	Share
+-	Update
+Ejemplo:
+[HttpPost]
+[Route("api/executechangeset/{workspaceId:Guid}/{lastChangeSetId:int}/{processReferences?}")]
+[ValidateHasAvailableSpace]
+[LicenseAuthorization(AuthorizationResources.Model, AuthActions.Update, "workspaceId")]
+public async Task<IHttpActionResult> ExecuteChangeSet(Guid workspaceId, int lastChangeSetId, [FromBody] string changeSet, bool processReferences = false)
+
+3.	Everyone (LicenseAuthorization)
+En este tipo de acceso, el endpoint está habilitado para cualquier petición de un usuario registrado (token) y para cualquier rol de usuario.
+Ejemplo:
+[HttpGet]
+[Route("api/objectdefinition/{workspaceId:Guid}/{hash}")]
+[LicenseAuthorization(AccessVisibility.Public)]
+public async Task<IHttpActionResult> GetObjectDefinition(Guid workspaceId, string hash)
+4.	Subscription Owner (RoleAuthorization)
+En este tipo de acceso, la autorización del endpoint depende del rol del usuario en la suscripción. 
+Subscription Roles
+-	Owner
+-	User
+Los siguientes controladores tienen configurado el acceso por rol de propietario en la suscripción. Requieren una seguridad mayor por manejar información sensible, como por ejemplo la información de configuración de subscripción:
+-	AdditionalSettings
+-	CompanyLogoController
+-	ExtendedAttributesController
+-	ResourcesController
+-	RevisionController
+-	SubscriptionSettingsController
+-	WebAnalyticsReportController
+Ejemplo:
+[HttpPost]
+[Route("api/subscription/{subscriptionId:Guid}/workspaces/{workspaceId:Guid}/diagrams/{diagramId:Guid}/revision")]
+[LicenseAuthorization(AuthorizationResources.Model, AuthActions.Get, "workspaceId")]
+[RoleAuthorization(SubscriptionRoles.Owner, SubscriptionRoles.Viewer, SubscriptionRoles.User)]
+public async Task<IHttpActionResult> AddRevisionChange(Guid subscriptionId, Guid workspaceId, Guid diagramId, RevisionChangeDto revisionChange)
+Vulnerabilidades
+Se corrigió el acceso al controlador CompanyLogo, por manejar información sensible de suscripción. Se configuró su tipo de autorización a Subscription  Owner:
+POST	/api/subscription/{subscriptionId}/companyLogo/images/upload/{imageId}/{uploadDate}	Subscription Owner

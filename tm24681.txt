@@ -1,0 +1,41 @@
+Hello Mario,
+As discussed today, I'm passing this case to you to review the behavior identified by the customer:
+New defect description
+When exporting the BPMN diagrams selected, the files are saved into a new folder that is created using the parent process name e.g. PHX_BPMS044_BP_Approval.
+If a folder with the parent process name already exists, a new folder is created using the parent process name with _1 appended to the end e.g. PHX_BPMS044_BP_Approval_01.
+When both folders described above (PHX_BPMS044_BP_Approval, PHX_BPMS044_BP_Approval_1) already exist, expected behaviour is that a new folder named PHX_BPMS044_BP_Approval_2 would be created. This is not happening, the BPMN files are exported to folder PHX_BPMS044_BP_Approval_1 which overwrites the existing files in the folder.
+Expected behaviour
+When exporting the selected BPMN diagrams:
+1.	Check if a folder with the parent process name exists.
+2.	If exists, loop until folder name using format <parent_process_name>_<i> does not exist
+Scenario 1
+Existing folders
+- PHX_BPMS044_BP_Approval
+- PHX_BPMS044_BP_Approval_1
+Outcome
+On next export. folder PHX_BPMS044_BP_Approval_2 is created.
+Scenario 2
+Existing folders
+- PHX_BPMS044_BP_Approval_1
+- PHX_BPMS044_BP_Approval_2
+Outcome
+On next export. folder PHX_BPMS044_BP_Approval is created.
+Scenario 3
+Existing folders
+- PHX_BPMS044_BP_Approval
+- PHX_BPMS044_BP_Approval_2
+Outcome
+On next export. folder PHX_BPMS044_BP_Approval_01 is created.
+Steps to reproduce issue:
+1. I exported a process with children and picked a parent and a child to export	 
+	- They are exported	 
+	- The directory is created containing the files: "Model succesfully exported to the foler: 	C:\Users\JEspitia\Documents\PHX_BPMS044_BP_Approval\"
+	- The files contain only the intended processes and nothing more.	
+2. I repeat the test	 
+	- They are exported.
+	- The directory is created containing the files: "Model succesfully exported to the foler: 	C:\Users\JEspitia\Documents\PHX_BPMS044_BP_Approval_1\"
+	Note that the filename has changed and is appended with _1	 
+	- The new directory is created containing my files.	 
+3. I repeat the test	 
+	- The directory is created containing the files: "Model succesfully exported to the foler: 	C:\Users\JEspitia\Documents\PHX_BPMS044_BP_Approval_1\"
+	- They are exported, but the filename remains at _1 - I would expect it to be _2 now.
